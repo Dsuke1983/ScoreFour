@@ -34,6 +34,9 @@ public class GameController : MonoBehaviour {
 	// 生成するコマのPrefab
 	public GameObject piecePrefab;
 
+	// 今の手番を格納
+	private PieceType order = PieceType.Black;
+
 	// このレイヤーだけにRayによる当たり判定をさせる
 	public LayerMask layerMask;
 
@@ -114,7 +117,7 @@ public class GameController : MonoBehaviour {
 	void Update () {
 
 		// 左クリックした際の処理
-		if (Input.GetMouseButton (0)) {
+		if (Input.GetMouseButtonDown (0)) {
 
 			// クリックしたスクリーン座標をRayに変換
 			// Input.mousePositionにはVector2が入っている
@@ -135,6 +138,29 @@ public class GameController : MonoBehaviour {
 
 				// クリックした時にコマを表示する
 				pieceController.ShowPiece ();
+
+				// 最初にクリックしたら赤色になる
+				pieceController.ChangeMaterial (PieceType.Red);
+
+				// もう一度同じところをクリックしたら該当ターンの色に変更
+				// そうでない場合はマテリアルを元に戻す
+
+				/*
+				if (order == PieceType.Black) {
+
+					pieceController.ChangeMaterial (order);
+
+				} else if (order == PieceType.White) {
+
+					pieceController.ChangeMaterial (order);
+
+				} else if (order == PieceType.Red) {
+
+					pieceController.ChangeMaterial (order);
+
+				}
+				*/
+
 
 				// コマのデータを更新する
 				int x = pieceController.GetDimensionX ();

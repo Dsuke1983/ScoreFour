@@ -8,6 +8,11 @@ public class PieceController : MonoBehaviour {
 	private int yDimension = 0;
 	private int zDimension = 0;
 
+	public Material materialBlack;
+	public Material materialWhite;
+	public Material materialRed;
+
+
 	void Start () {
 		
 	}
@@ -48,4 +53,20 @@ public class PieceController : MonoBehaviour {
 
 	}
 
+	public void ChangeMaterial(PieceType order) {
+
+		if (order == PieceType.Black) {
+
+			this.gameObject.GetComponent<Renderer> ().material = materialBlack;
+
+		} else if (order == PieceType.White) {
+
+			this.gameObject.GetComponent<Renderer> ().material = materialWhite;
+
+		} else if (order == PieceType.Red) {
+
+			this.gameObject.GetComponent<Renderer> ().material = materialRed;
+
+		}
+	}
 }
