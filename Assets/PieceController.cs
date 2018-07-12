@@ -53,6 +53,12 @@ public class PieceController : MonoBehaviour {
 
 	}
 
+	public void HidePiece() {
+
+		gameObject.GetComponent<MeshRenderer> ().enabled = false;
+
+	}
+
 	public void ChangeMaterial(PieceType order) {
 
 		if (order == PieceType.Black) {

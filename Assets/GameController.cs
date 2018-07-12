@@ -37,6 +37,9 @@ public class GameController : MonoBehaviour {
 	// 今の手番を格納
 	private PieceType order = PieceType.Black;
 
+	// 最初にRayが当たったオブジェクトの情報を格納
+	private PieceController selectedPieceController;
+
 	// このレイヤーだけにRayによる当たり判定をさせる
 	public LayerMask layerMask;
 
@@ -50,8 +53,10 @@ public class GameController : MonoBehaviour {
 	const float ySpace = 1;
 	const float zSpace = 1;
 
+	// Pieceクラスの三次元配列
 	private Piece[, ,] pieceArray = new Piece[pieceXCount, pieceYCount, pieceZCount];
 
+	// 何の三次元配列？
 	private GameObject[, ,] pieceObjArray = new GameObject[pieceXCount, pieceYCount, pieceZCount];
 
 	void Start () {
@@ -136,33 +141,43 @@ public class GameController : MonoBehaviour {
 			if (Physics.Raycast (ray, out hit, Mathf.Infinity, layerMask)) {
 				PieceController pieceController = hit.collider.gameObject.GetComponent<PieceController> ();
 
-				// クリックした時にコマを表示する
-				pieceController.ShowPiece ();
-
-				// 最初にクリックしたら赤色になる
-				pieceController.ChangeMaterial (PieceType.Red);
-
-				// もう一度同じところをクリックしたら該当ターンの色に変更
+				// もう一度同じコマにRayが当たれば該当ターンの色に変更
 				// そうでない場合はマテリアルを元に戻す
+				if (selectedPieceController == null) {
+					// クリックした時にコマを表示する
+					pieceController.ShowPiece ();
 
-				/*
-				if (order == PieceType.Black) {
+					// 最初にクリックしたら赤色になる
+					pieceController.ChangeMaterial (PieceType.Red);
 
+					// プライベート変数に入れておく
+					selectedPieceController = pieceController;
+
+					// 他に赤色のコマがあったら消す
+
+
+				// Rayの当たったところが選択したコマの場合
+				} else if (selectedPieceController == pieceController){
+
+					// 現在のターンの色に変更する
 					pieceController.ChangeMaterial (order);
 
-				} else if (order == PieceType.White) {
+					// ターンを変更する
+					if (order == PieceType.Black) {
+						order = PieceType.White;
+					} else if (order == PieceType.White) {
+						order = PieceType.Black;
+					}
 
-					pieceController.ChangeMaterial (order);
+					// 選択している状態を解除する
+					selectedPieceController = null;
 
-				} else if (order == PieceType.Red) {
-
-					pieceController.ChangeMaterial (order);
-
+				// Rayの当たったところが白か黒の場合何もしない
 				}
-				*/
 
 
-				// コマのデータを更新する
+
+				// コマの情報を取得する
 				int x = pieceController.GetDimensionX ();
 				int y = pieceController.GetDimensionY ();
 				int z = pieceController.GetDimensionZ ();
