@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public enum PieceType {
+	Initial,
 	None,
 	Red,
 	Black,
@@ -17,6 +18,9 @@ public class Piece {
 	// コマの種類を格納する変数
 	public PieceType pieceType;
 
+	// CPUロジックの勝敗を格納する変数
+	public int[] cpuWinLose = new int[3];
+
 	// このクラスを初期化する時に呼ぶコンストラクタ
 	public Piece(Vector3 position, PieceType pieceType) {
 		this.position = position;
@@ -30,6 +34,22 @@ public class Piece {
 }
 
 public class GameController : MonoBehaviour {
+
+	// Playerのコマの色
+	PieceType playerPieceType;
+
+	// CPUのコマの色
+	PieceType cpuPieceType;
+
+	// CPUのレベル1〜3
+	int cpuLevel;
+
+	// CPUの思考回数
+	int cpuThoughtNumber = 100;
+
+	// ゲームの勝敗を格納
+	public static bool blackWin = false;
+	public static bool whiteWin = false;
 
 	// 生成するコマのPrefab
 	public GameObject piecePrefab;
@@ -141,61 +161,395 @@ public class GameController : MonoBehaviour {
 			if (Physics.Raycast (ray, out hit, Mathf.Infinity, layerMask)) {
 				PieceController pieceController = hit.collider.gameObject.GetComponent<PieceController> ();
 
-				// もう一度同じコマにRayが当たれば該当ターンの色に変更
-				// そうでない場合はマテリアルを元に戻す
-				if (selectedPieceController == null) {
-					// クリックした時にコマを表示する
-					pieceController.ShowPiece ();
-
-					// 最初にクリックしたら赤色になる
-					pieceController.ChangeMaterial (PieceType.Red);
-
-					// プライベート変数に入れておく
-					selectedPieceController = pieceController;
-
-					// 他に赤色のコマがあったら消す
-
-
-				// Rayの当たったところが選択したコマの場合
-				} else if (selectedPieceController == pieceController){
-
-					// 現在のターンの色に変更する
-					pieceController.ChangeMaterial (order);
-
-					// ターンを変更する
-					if (order == PieceType.Black) {
-						order = PieceType.White;
-					} else if (order == PieceType.White) {
-						order = PieceType.Black;
-					}
-
-					// 選択している状態を解除する
-					selectedPieceController = null;
-
-				// Rayの当たったところが白か黒の場合何もしない
-				}
-
-
-
-				// コマの情報を取得する
+				// Rayが当たったコマの情報を取得する
 				int x = pieceController.GetDimensionX ();
 				int y = pieceController.GetDimensionY ();
 				int z = pieceController.GetDimensionZ ();
+
 				Piece piece = pieceArray [x, y, z];
 
 				// コマの情報を取得
 				if (piece.pieceType == PieceType.None) {
-					piece.SetPieceType (PieceType.White);
 
-					// アクティブにしたコマが、4段目ではない場合に
-					// アクティブにしたコマの1段上をアクティブにする
-					// オブジェクトは見えないが、コライダーがあるのでRayが当たるようになる
-					if (y < pieceYCount - 1) {
-						GameObject pieceObj = pieceObjArray [x, y + 1, z];
-						pieceObj.SetActive (true);
+					// 選択されているコマがない場合
+					if (selectedPieceController == null) {
+
+						// クリックした時にコマを表示する
+						pieceController.ShowPiece ();
+
+						// 最初にクリックしたら赤色になる
+						pieceController.ChangeMaterial (PieceType.Red);
+
+						// Rayが当たったオブジェクト(pieceController)をプライベート変数に入れておく
+						selectedPieceController = pieceController;
+					
+					
+					// 選択されているコマがある場合
+					} else {
+
+						// 同じコマを選択した場合
+						if (pieceController == selectedPieceController) {
+
+							piece.SetPieceType (order);
+
+							pieceController.ChangeMaterial (order);
+
+							GameCheck ();
+
+							selectedPieceController = null;
+
+							// ターンを変更する
+							if (order == PieceType.Black) {
+								order = PieceType.White;
+							} else if (order == PieceType.White) {
+								order = PieceType.Black;
+							}
+
+							// アクティブにしたコマが、4段目ではない場合に
+							// アクティブにしたコマの1段上をアクティブにする
+							// オブジェクトは見えないが、コライダーがあるのでRayが当たるようになる
+							if (y < pieceYCount - 1) {
+								GameObject pieceObj = pieceObjArray [x, y + 1, z];
+								pieceObj.SetActive (true);
+							}
+						}
+
+						// 違うコマを選択した場合
+						else {
+
+							// 現在の赤いコマを非表示にする
+							selectedPieceController.HidePiece();
+
+							// 新しく選択したコマを赤く変更する
+							pieceController.ShowPiece();
+							pieceController.ChangeMaterial (PieceType.Red);
+
+							// Rayが当たったオブジェクト(pieceController)をプライベート変数に入れておく
+							selectedPieceController = pieceController;
+						}
 					}
 				}
 			}
 		}
 	}
+
+	void GameCheck () {
+
+		PieceType checkPieceType = PieceType.Initial;
+
+		int checkPieceCount = 0;
+
+		// 縦のチェック
+		for (int x = 0; x < 4; x++) {
+
+			for (int y = 0; y < 4; y++) {
+
+				for (int z = 0; z < 4; z++) {
+
+					if (z == 0) {
+
+						checkPieceType = pieceArray [x, y, z].pieceType;
+
+						checkPieceCount = 0;
+
+						if (checkPieceType == PieceType.None) {
+
+
+							break;
+
+						}
+
+					} else {
+
+						if (checkPieceType == pieceArray [x, y, z].pieceType) {
+
+							checkPieceCount++;
+
+							if (checkPieceType == pieceArray [x, y, z].pieceType && checkPieceCount == 3) {
+
+								Debug.Log ("WIN");
+
+							}
+						} else {
+
+							break;
+
+						}
+					}
+				}
+			}
+		}
+
+		// 横のチェック
+		for (int z = 0; z < 4; z++) {
+
+			for (int y = 0; y < 4; y++) {
+
+				for (int x = 0; x < 4; x++) {
+
+					if (x == 0) {
+
+						checkPieceType = pieceArray [x, y, z].pieceType;
+
+						checkPieceCount = 0;
+
+						if (checkPieceType == PieceType.None) {
+
+
+							break;
+
+						}
+
+					} else {
+
+						if (checkPieceType == pieceArray [x, y, z].pieceType) {
+
+							checkPieceCount++;
+
+							if (checkPieceType == pieceArray [x, y, z].pieceType && checkPieceCount == 3) {
+
+								Debug.Log ("WIN");
+
+							}
+						} else {
+
+							break;
+
+						}
+					}
+				}
+			}
+		}
+
+		// 高さのチェック
+		for (int x = 0; x < 4; x++) {
+
+			for (int z = 0; z < 4; z++) {
+
+				for (int y = 0; y < 4; y++) {
+
+					if (y == 0) {
+
+						checkPieceType = pieceArray [x, y, z].pieceType;
+
+						checkPieceCount = 0;
+
+						if (checkPieceType == PieceType.None) {
+
+							break;
+
+						}
+
+					} else {
+
+						if (checkPieceType == pieceArray [x, y, z].pieceType) {
+
+							checkPieceCount++;
+
+							if (checkPieceType == pieceArray [x, y, z].pieceType && checkPieceCount == 3) {
+
+								Debug.Log ("WIN");
+
+							}
+						} else {
+
+							break;
+
+						}
+					}
+				}
+			}
+		}
+
+		// 左下から右上に斜め。Z(奥行をずらしていく)
+		for (int z = 0; z < 4; z++) {
+
+			checkPieceType = pieceArray [0, 0, z].pieceType;
+
+			if (checkPieceType == PieceType.None) {
+
+				continue;
+
+			}
+
+			if (checkPieceType == pieceArray [1, 1, z].pieceType &&
+				checkPieceType == pieceArray [2, 2, z].pieceType && 
+				checkPieceType == pieceArray [3, 3, z].pieceType ) {
+
+				Debug.Log ("WIN");
+			}
+		}
+
+		// 右下から左上に斜め。Z(奥行をずらしていく)
+		for (int z = 0; z < 4; z++) {
+
+			checkPieceType = pieceArray [3, 0, z].pieceType;
+
+			if (checkPieceType == PieceType.None) {
+
+				continue;
+
+			}
+			if (checkPieceType == pieceArray [2, 1, z].pieceType &&
+				checkPieceType == pieceArray [1, 2, z].pieceType && 
+				checkPieceType == pieceArray [0, 3, z].pieceType ) {
+
+				Debug.Log ("WIN");
+			}
+		}
+
+		// 左下手前から左奥に斜め。X(横方向をずらしていく)
+		for (int x = 0; x < 4; x++) {
+
+			checkPieceType = pieceArray [x, 0, 0].pieceType;
+
+			if (checkPieceType == PieceType.None) {
+
+				continue;
+
+			}
+
+			if (checkPieceType == pieceArray [x, 1, 1].pieceType &&
+				checkPieceType == pieceArray [x, 2, 2].pieceType && 
+				checkPieceType == pieceArray [x, 3, 3].pieceType ) {
+
+				Debug.Log ("WIN");
+
+			}
+		}
+
+		// 左下奥から左手前に斜め。X(横方向をずらしていく)
+		for (int x = 0; x < 4; x++) {
+
+			checkPieceType = pieceArray [x, 0, 3].pieceType;
+
+			if (checkPieceType == PieceType.None) {
+
+				continue;
+
+			}
+
+			if (checkPieceType == pieceArray [x, 1, 2].pieceType &&
+				checkPieceType == pieceArray [x, 2, 1].pieceType && 
+				checkPieceType == pieceArray [x, 3, 0].pieceType ) {
+
+				Debug.Log ("WIN");
+
+			}
+		}
+
+		// 左下からクロス。Y(高さをずらしていく)
+		for (int y = 0; y < 4; y++) {
+
+			checkPieceType = pieceArray [0, y, 0].pieceType;
+
+			if (checkPieceType == PieceType.None) {
+
+				continue;
+
+			}
+
+			if (checkPieceType == pieceArray [1, y, 1].pieceType &&
+				checkPieceType == pieceArray [2, y, 2].pieceType && 
+				checkPieceType == pieceArray [3, y, 3].pieceType ) {
+
+				Debug.Log ("WIN");
+
+			}
+		}
+
+		// 右下からクロス。Y(高さをずらしていく)
+		for (int y = 0; y < 4; y++) {
+
+			checkPieceType = pieceArray [3, y, 0].pieceType;
+
+			if (checkPieceType == PieceType.None) {
+
+				continue;
+
+			}
+
+			if (checkPieceType == pieceArray [2, y, 1].pieceType &&
+				checkPieceType == pieceArray [1, y, 2].pieceType && 
+				checkPieceType == pieceArray [0, y, 3].pieceType ) {
+
+				Debug.Log ("WIN");
+
+			}
+		}
+
+		// 左手前下から右奥上に斜めクロス
+		checkPieceType = pieceArray [0, 0, 0].pieceType;
+
+		if (checkPieceType != PieceType.None) {
+
+			if (checkPieceType == pieceArray [1, 1, 1].pieceType &&
+				checkPieceType == pieceArray [2, 2, 2].pieceType && 
+				checkPieceType == pieceArray [3, 3, 3].pieceType ) {
+
+				Debug.Log ("WIN");
+
+			}
+		}
+
+		// 右手前下から左奥上に斜めクロス
+		checkPieceType = pieceArray [3, 0, 0].pieceType;
+
+		if (checkPieceType != PieceType.None) {
+
+			if (checkPieceType == pieceArray [2, 1, 1].pieceType &&
+				checkPieceType == pieceArray [1, 2, 2].pieceType && 
+				checkPieceType == pieceArray [0, 3, 3].pieceType ) {
+
+				Debug.Log ("WIN");
+
+			}
+		}
+
+		// 左奥下から右手前上に斜めクロス
+		checkPieceType = pieceArray [0, 0, 3].pieceType;
+
+		if (checkPieceType != PieceType.None) {
+
+			if (checkPieceType == pieceArray [1, 1, 2].pieceType &&
+				checkPieceType == pieceArray [2, 2, 1].pieceType && 
+				checkPieceType == pieceArray [3, 3, 0].pieceType ) {
+
+				Debug.Log ("WIN");
+
+			}
+		}
+
+		// 右奥下から左手前上に斜めクロス
+		checkPieceType = pieceArray [3, 0, 3].pieceType;
+
+		if (checkPieceType != PieceType.None) {
+
+			if (checkPieceType == pieceArray [2, 1, 2].pieceType &&
+				checkPieceType == pieceArray [1, 2, 1].pieceType && 
+				checkPieceType == pieceArray [0, 3, 0].pieceType ) {
+
+				Debug.Log ("WIN");
+
+			}
+		}
+	}
+
+	void CpuLogic(){
+
+		// 現在の状況をコピーする
+
+
+		// CPUが、置いたら勝てる場所を探してあれば置く
+
+		// CPUが、置かないと負ける場所を探してあれば置く
+
+		// CPUが、16パターン試して、勝敗引き分けを格納
+
+		// ゲーム難易度に応じて、どこに置くかを決める
+
+
+
+	}
+
 }
