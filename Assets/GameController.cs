@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public enum PieceType {
 	Initial,
@@ -538,7 +539,9 @@ public class GameController : MonoBehaviour {
 	void CpuLogic(){
 
 		// 現在の状況をコピーする
+		Piece[, ,] pieceArrayNow = new Piece[pieceXCount, pieceYCount, pieceZCount];
 
+		Array.Copy(pieceArray, pieceArrayNow, pieceArray.Length);
 
 		// CPUが、置いたら勝てる場所を探してあれば置く
 
