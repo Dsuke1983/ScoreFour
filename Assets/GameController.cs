@@ -19,9 +19,6 @@ public class Piece {
 	// コマの種類を格納する変数
 	public PieceType pieceType;
 
-	// CPUロジックの勝敗を格納する変数
-	public int[] cpuWinLose = new int[3];
-
 	// このクラスを初期化する時に呼ぶコンストラクタ
 	public Piece(Vector3 position, PieceType pieceType) {
 		this.position = position;
@@ -82,6 +79,14 @@ public class GameController : MonoBehaviour {
 
 	void Start () {
 
+		// CPUのコマをランダムに設定
+		int intCpuPieceType = UnityEngine.Random.Range(3,4);
+
+		cpuPieceType = (PieceType)intCpuPieceType;
+
+
+
+		// 初期コマの設定
 		for (int i = 0; i < pieceXCount; i++) {
 			for (int j = 0; j < pieceYCount; j++) {
 				for (int k = 0; k < pieceZCount; k++) {
@@ -138,6 +143,7 @@ public class GameController : MonoBehaviour {
 				}
 			}
 		}
+
 	}
 	
 	void Update () {
@@ -543,16 +549,48 @@ public class GameController : MonoBehaviour {
 
 		Array.Copy(pieceArray, pieceArrayNow, pieceArray.Length);
 
+		// 勝てばポイントが増える三次元配列
+		int[, ,] piecePoints = new int[pieceXCount, pieceYCount, pieceZCount];
+
 		// CPUが、置いたら勝てる場所を探してあれば置く
 
 		// CPUが、置かないと負ける場所を探してあれば置く
 
 		// CPUが、16パターン試して、勝敗引き分けを格納
 
+
+		for (int z = 0; z < 4; z++) {
+
+			for (int x = 0; x < 4; x++) {
+
+				for (int y = 0; y < 4; y++) {
+					
+					if (pieceArrayNow [x, y, z].pieceType == PieceType.None) {
+
+						// この座標にコマを置いてテスト
+						// ここに関数
+						CpuGameCheck();
+
+						Debug.Log (pieceArrayNow [x, y, z].position);
+
+						break;
+
+					} else {
+
+						// 1段上のコマをチェック
+						continue;
+
+					}
+				}
+			}
+		}
 		// ゲーム難易度に応じて、どこに置くかを決める
-
-
 
 	}
 
+	void CpuGameCheck(PieceType cpuPieceType){
+
+		pieceArrayNow [x, y, z].pieceType = cpuPieceType;
+
+	}
 }
