@@ -1,12 +1,12 @@
 fileFormatVersion: 2
 guid: ffa6de1deb0a44259b0973861679ff15
-timeCreated: 1530700290
+timeCreated: 1533543261
 licenseType: Free
 MonoImporter:
   serializedVersion: 2
   defaultReferences:
   - materialBlack: {fileID: 2100000, guid: a4d531f4b438740cc88992c2244b26a9, type: 2}
-  - materialWhite: {fileID: 2100000, guid: 5ee0977b288b44567ad0d78859ad08de, type: 2}
+  - materialWhite: {fileID: 2100000, guid: bdadbd86e36176342bd968015867f5e5, type: 2}
   - materialRed: {fileID: 2100000, guid: 4118901ba6bb94ec9a87846b0eb66f29, type: 2}
   executionOrder: 0
   icon: {instanceID: 0}

@@ -11,6 +11,15 @@ public enum PieceType {
 	White
 }
 
+// ゲームモード
+public enum GameMode {
+	Online2p,
+	Offline2P,
+	CpuLevel1,
+	CpuLevel2,
+	CpuLevel3
+}
+
 public class Piece {
 
 	// 生成するポジションを入れるVector3
@@ -19,10 +28,23 @@ public class Piece {
 	// コマの種類を格納する変数
 	public PieceType pieceType;
 
+	// 多次元配列のxのIndex
+	public int xIndex;
+
+	// 多次元配列のyのIndex
+	public int yIndex;
+
+	// 多次元配列のzのIndex
+	public int zIndex;
+
 	// このクラスを初期化する時に呼ぶコンストラクタ
-	public Piece(Vector3 position, PieceType pieceType) {
+	public Piece(Vector3 position, PieceType pieceType, int xIndex, int yIndex, int zIndex) {
 		this.position = position;
 		this.pieceType = pieceType;
+
+		this.xIndex = xIndex;
+		this.yIndex = yIndex;
+		this.zIndex = zIndex;
 	}
 
 	// コマの種類を設定する
@@ -33,18 +55,6 @@ public class Piece {
 
 public class GameController : MonoBehaviour {
 
-	// Playerのコマの色
-	PieceType playerPieceType;
-
-	// CPUのコマの色
-	PieceType cpuPieceType;
-
-	// CPUのレベル1〜3
-	int cpuLevel;
-
-	// CPUの思考回数
-	int cpuThoughtNumber = 100;
-
 	// ゲームの勝敗を格納
 	public static bool blackWin = false;
 	public static bool whiteWin = false;
@@ -53,7 +63,7 @@ public class GameController : MonoBehaviour {
 	public GameObject piecePrefab;
 
 	// 今の手番を格納
-	private PieceType order = PieceType.Black;
+	public PieceType order = PieceType.Black;
 
 	// 最初にRayが当たったオブジェクトの情報を格納
 	private PieceController selectedPieceController;
@@ -62,9 +72,9 @@ public class GameController : MonoBehaviour {
 	public LayerMask layerMask;
 
 	// コマの数(定数)
-	const int pieceXCount = 4;
-	const int pieceYCount = 4;
-	const int pieceZCount = 4;
+	public const int pieceXCount = 4;
+	public const int pieceYCount = 4;
+	public const int pieceZCount = 4;
 
 	// コマの生成間隔
 	const float xSpace = 1;
@@ -72,17 +82,18 @@ public class GameController : MonoBehaviour {
 	const float zSpace = 1;
 
 	// Pieceクラスの三次元配列
-	private Piece[, ,] pieceArray = new Piece[pieceXCount, pieceYCount, pieceZCount];
+	public Piece[, ,] pieceArray = new Piece[pieceXCount, pieceYCount, pieceZCount];
 
 	// 何の三次元配列？
-	private GameObject[, ,] pieceObjArray = new GameObject[pieceXCount, pieceYCount, pieceZCount];
+	public GameObject[, ,] pieceObjArray = new GameObject[pieceXCount, pieceYCount, pieceZCount];
+
+	private CpuGameController cpuGameControlloer;
 
 	void Start () {
 
-		// CPUのコマをランダムに設定
-		int intCpuPieceType = UnityEngine.Random.Range(3,4);
+		Debug.Log (SceneChange.gameMode);
 
-		cpuPieceType = (PieceType)intCpuPieceType;
+		cpuGameControlloer = GetComponent <CpuGameController> ();
 
 
 
@@ -95,7 +106,7 @@ public class GameController : MonoBehaviour {
 					Vector3 piecePos = new Vector3 (i * xSpace, j * ySpace, k * zSpace);
 
 					// コマの情報を設定
-					pieceArray [i, j, k] = new Piece (piecePos, PieceType.None);
+					pieceArray [i, j, k] = new Piece (piecePos, PieceType.None, i, j, k);
 
 				}
 			}
@@ -187,6 +198,9 @@ public class GameController : MonoBehaviour {
 						// 最初にクリックしたら赤色になる
 						pieceController.ChangeMaterial (PieceType.Red);
 
+						// 音を鳴らす
+						MyAudio.put1SoundFlug = true;
+
 						// Rayが当たったオブジェクト(pieceController)をプライベート変数に入れておく
 						selectedPieceController = pieceController;
 					
@@ -200,6 +214,8 @@ public class GameController : MonoBehaviour {
 							piece.SetPieceType (order);
 
 							pieceController.ChangeMaterial (order);
+
+							MyAudio.put2SoundFlug = true;
 
 							GameCheck ();
 
@@ -219,6 +235,14 @@ public class GameController : MonoBehaviour {
 								GameObject pieceObj = pieceObjArray [x, y + 1, z];
 								pieceObj.SetActive (true);
 							}
+
+							if (SceneChange.gameMode == GameMode.CpuLevel1 ||
+							    SceneChange.gameMode == GameMode.CpuLevel2 ||
+							    SceneChange.gameMode == GameMode.CpuLevel3) {
+
+								cpuGameControlloer.CpuLogic ();
+							}
+
 						}
 
 						// 違うコマを選択した場合
@@ -231,6 +255,9 @@ public class GameController : MonoBehaviour {
 							pieceController.ShowPiece();
 							pieceController.ChangeMaterial (PieceType.Red);
 
+							// 音を鳴らす
+							MyAudio.put1SoundFlug = true;
+
 							// Rayが当たったオブジェクト(pieceController)をプライベート変数に入れておく
 							selectedPieceController = pieceController;
 						}
@@ -240,7 +267,7 @@ public class GameController : MonoBehaviour {
 		}
 	}
 
-	void GameCheck () {
+	public void GameCheck () {
 
 		PieceType checkPieceType = PieceType.Initial;
 
@@ -275,6 +302,7 @@ public class GameController : MonoBehaviour {
 							if (checkPieceType == pieceArray [x, y, z].pieceType && checkPieceCount == 3) {
 
 								Debug.Log ("WIN");
+								MyAudio.winSoundFlug = true;
 
 							}
 						} else {
@@ -316,7 +344,7 @@ public class GameController : MonoBehaviour {
 							if (checkPieceType == pieceArray [x, y, z].pieceType && checkPieceCount == 3) {
 
 								Debug.Log ("WIN");
-
+								MyAudio.loseSoundFlug = true;
 							}
 						} else {
 
@@ -356,6 +384,7 @@ public class GameController : MonoBehaviour {
 							if (checkPieceType == pieceArray [x, y, z].pieceType && checkPieceCount == 3) {
 
 								Debug.Log ("WIN");
+								MyAudio.winSoundFlug = true;
 
 							}
 						} else {
@@ -384,6 +413,8 @@ public class GameController : MonoBehaviour {
 				checkPieceType == pieceArray [3, 3, z].pieceType ) {
 
 				Debug.Log ("WIN");
+				MyAudio.winSoundFlug = true;
+
 			}
 		}
 
@@ -402,6 +433,8 @@ public class GameController : MonoBehaviour {
 				checkPieceType == pieceArray [0, 3, z].pieceType ) {
 
 				Debug.Log ("WIN");
+				MyAudio.winSoundFlug = true;
+
 			}
 		}
 
@@ -421,6 +454,7 @@ public class GameController : MonoBehaviour {
 				checkPieceType == pieceArray [x, 3, 3].pieceType ) {
 
 				Debug.Log ("WIN");
+				MyAudio.winSoundFlug = true;
 
 			}
 		}
@@ -441,6 +475,7 @@ public class GameController : MonoBehaviour {
 				checkPieceType == pieceArray [x, 3, 0].pieceType ) {
 
 				Debug.Log ("WIN");
+				MyAudio.winSoundFlug = true;
 
 			}
 		}
@@ -461,6 +496,7 @@ public class GameController : MonoBehaviour {
 				checkPieceType == pieceArray [3, y, 3].pieceType ) {
 
 				Debug.Log ("WIN");
+				MyAudio.winSoundFlug = true;
 
 			}
 		}
@@ -481,6 +517,7 @@ public class GameController : MonoBehaviour {
 				checkPieceType == pieceArray [0, y, 3].pieceType ) {
 
 				Debug.Log ("WIN");
+				MyAudio.winSoundFlug = true;
 
 			}
 		}
@@ -495,6 +532,7 @@ public class GameController : MonoBehaviour {
 				checkPieceType == pieceArray [3, 3, 3].pieceType ) {
 
 				Debug.Log ("WIN");
+				MyAudio.winSoundFlug = true;
 
 			}
 		}
@@ -509,6 +547,7 @@ public class GameController : MonoBehaviour {
 				checkPieceType == pieceArray [0, 3, 3].pieceType ) {
 
 				Debug.Log ("WIN");
+				MyAudio.winSoundFlug = true;
 
 			}
 		}
@@ -523,6 +562,7 @@ public class GameController : MonoBehaviour {
 				checkPieceType == pieceArray [3, 3, 0].pieceType ) {
 
 				Debug.Log ("WIN");
+				MyAudio.winSoundFlug = true;
 
 			}
 		}
@@ -537,60 +577,9 @@ public class GameController : MonoBehaviour {
 				checkPieceType == pieceArray [0, 3, 0].pieceType ) {
 
 				Debug.Log ("WIN");
+				MyAudio.winSoundFlug = true;
 
 			}
 		}
-	}
-
-	void CpuLogic(){
-
-		// 現在の状況をコピーする
-		Piece[, ,] pieceArrayNow = new Piece[pieceXCount, pieceYCount, pieceZCount];
-
-		Array.Copy(pieceArray, pieceArrayNow, pieceArray.Length);
-
-		// 勝てばポイントが増える三次元配列
-		int[, ,] piecePoints = new int[pieceXCount, pieceYCount, pieceZCount];
-
-		// CPUが、置いたら勝てる場所を探してあれば置く
-
-		// CPUが、置かないと負ける場所を探してあれば置く
-
-		// CPUが、16パターン試して、勝敗引き分けを格納
-
-
-		for (int z = 0; z < 4; z++) {
-
-			for (int x = 0; x < 4; x++) {
-
-				for (int y = 0; y < 4; y++) {
-					
-					if (pieceArrayNow [x, y, z].pieceType == PieceType.None) {
-
-						// この座標にコマを置いてテスト
-						// ここに関数
-						CpuGameCheck();
-
-						Debug.Log (pieceArrayNow [x, y, z].position);
-
-						break;
-
-					} else {
-
-						// 1段上のコマをチェック
-						continue;
-
-					}
-				}
-			}
-		}
-		// ゲーム難易度に応じて、どこに置くかを決める
-
-	}
-
-	void CpuGameCheck(PieceType cpuPieceType){
-
-		pieceArrayNow [x, y, z].pieceType = cpuPieceType;
-
 	}
 }
