@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Offline2pGameController : MonoBehaviour {
+public class CpuUI : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
@@ -13,5 +13,4 @@ public class Offline2pGameController : MonoBehaviour {
 	void Update () {
 		
 	}
-
 }

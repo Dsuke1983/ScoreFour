@@ -55,9 +55,11 @@ public class Piece {
 
 public class GameController : MonoBehaviour {
 
-	// ゲームの勝敗を格納
-	public static bool blackWin = false;
-	public static bool whiteWin = false;
+	// 戻るボタン
+	GameObject backButton;
+
+	// ゲームの終了フラグ
+	public static bool FinishFlug = false;
 
 	// 生成するコマのPrefab
 	public GameObject piecePrefab;
@@ -91,11 +93,12 @@ public class GameController : MonoBehaviour {
 
 	void Start () {
 
-		Debug.Log (SceneChange.gameMode);
-
 		cpuGameControlloer = GetComponent <CpuGameController> ();
 
+		// 戻るボタン
+		backButton = GameObject.Find("back");
 
+		backButton.gameObject.SetActive (false);
 
 		// 初期コマの設定
 		for (int i = 0; i < pieceXCount; i++) {
@@ -160,7 +163,7 @@ public class GameController : MonoBehaviour {
 	void Update () {
 
 		// 左クリックした際の処理
-		if (Input.GetMouseButtonDown (0)) {
+		if (Input.GetMouseButtonDown (0) && FinishFlug == false) {
 
 			// クリックしたスクリーン座標をRayに変換
 			// Input.mousePositionにはVector2が入っている
@@ -217,7 +220,15 @@ public class GameController : MonoBehaviour {
 
 							MyAudio.put2SoundFlug = true;
 
-							GameCheck ();
+							if (SceneChange.gameMode == GameMode.Offline2P) {
+								
+								if (GameCheck (pieceArray) == 1) {
+
+									Win ();
+
+								}
+
+							}
 
 							selectedPieceController = null;
 
@@ -267,11 +278,40 @@ public class GameController : MonoBehaviour {
 		}
 	}
 
-	public void GameCheck () {
+	// 0 = NONE / 1 = 揃っている / 2 = 未実装 / 3 = 置く場所がなく引き分け を返す
+	public int GameCheck (Piece[, ,] pieceArrayCheck) {
 
 		PieceType checkPieceType = PieceType.Initial;
 
 		int checkPieceCount = 0;
+
+		// 置ける場所が残っているかチェック
+		List<Piece> putableListCheck = new List<Piece> ();
+
+		for (int z = 0; z < 4; z++) {
+
+			for (int x = 0; x < 4; x++) {
+
+				for (int y = 0; y < 4; y++) {
+
+					if (pieceArray [x, y, z].pieceType == PieceType.None) {
+
+						// 何も置かれていない場合は置ける場所のリストに加える
+						putableListCheck.Add (pieceArray[x, y, z]);
+
+						break;
+
+					}
+				}
+			}
+		}
+
+		// 置ける場所が残っていない場合、引き分け
+		if (putableListCheck.Count == 0) {
+
+			return 3;
+
+		}
 
 		// 縦のチェック
 		for (int x = 0; x < 4; x++) {
@@ -282,12 +322,11 @@ public class GameController : MonoBehaviour {
 
 					if (z == 0) {
 
-						checkPieceType = pieceArray [x, y, z].pieceType;
+						checkPieceType = pieceArrayCheck [x, y, z].pieceType;
 
 						checkPieceCount = 0;
 
 						if (checkPieceType == PieceType.None) {
-
 
 							break;
 
@@ -295,14 +334,13 @@ public class GameController : MonoBehaviour {
 
 					} else {
 
-						if (checkPieceType == pieceArray [x, y, z].pieceType) {
+						if (checkPieceType == pieceArrayCheck [x, y, z].pieceType) {
 
 							checkPieceCount++;
 
-							if (checkPieceType == pieceArray [x, y, z].pieceType && checkPieceCount == 3) {
+							if (checkPieceType == pieceArrayCheck [x, y, z].pieceType && checkPieceCount == 3) {
 
-								Debug.Log ("WIN");
-								MyAudio.winSoundFlug = true;
+								return 1;
 
 							}
 						} else {
@@ -324,7 +362,7 @@ public class GameController : MonoBehaviour {
 
 					if (x == 0) {
 
-						checkPieceType = pieceArray [x, y, z].pieceType;
+						checkPieceType = pieceArrayCheck [x, y, z].pieceType;
 
 						checkPieceCount = 0;
 
@@ -337,14 +375,13 @@ public class GameController : MonoBehaviour {
 
 					} else {
 
-						if (checkPieceType == pieceArray [x, y, z].pieceType) {
+						if (checkPieceType == pieceArrayCheck [x, y, z].pieceType) {
 
 							checkPieceCount++;
 
-							if (checkPieceType == pieceArray [x, y, z].pieceType && checkPieceCount == 3) {
+							if (checkPieceType == pieceArrayCheck [x, y, z].pieceType && checkPieceCount == 3) {
 
-								Debug.Log ("WIN");
-								MyAudio.loseSoundFlug = true;
+								return 1;
 							}
 						} else {
 
@@ -365,9 +402,9 @@ public class GameController : MonoBehaviour {
 
 					if (y == 0) {
 
-						checkPieceType = pieceArray [x, y, z].pieceType;
+						checkPieceType = pieceArrayCheck [x, y, z].pieceType;
 
-						checkPieceCount = 0;
+						checkPieceCount = 1;
 
 						if (checkPieceType == PieceType.None) {
 
@@ -377,14 +414,13 @@ public class GameController : MonoBehaviour {
 
 					} else {
 
-						if (checkPieceType == pieceArray [x, y, z].pieceType) {
+						if (checkPieceType == pieceArrayCheck [x, y, z].pieceType) {
 
 							checkPieceCount++;
 
-							if (checkPieceType == pieceArray [x, y, z].pieceType && checkPieceCount == 3) {
+							if (checkPieceType == pieceArrayCheck [x, y, z].pieceType && checkPieceCount == 3) {
 
-								Debug.Log ("WIN");
-								MyAudio.winSoundFlug = true;
+								return 1;
 
 							}
 						} else {
@@ -400,7 +436,7 @@ public class GameController : MonoBehaviour {
 		// 左下から右上に斜め。Z(奥行をずらしていく)
 		for (int z = 0; z < 4; z++) {
 
-			checkPieceType = pieceArray [0, 0, z].pieceType;
+			checkPieceType = pieceArrayCheck [0, 0, z].pieceType;
 
 			if (checkPieceType == PieceType.None) {
 
@@ -408,12 +444,11 @@ public class GameController : MonoBehaviour {
 
 			}
 
-			if (checkPieceType == pieceArray [1, 1, z].pieceType &&
-				checkPieceType == pieceArray [2, 2, z].pieceType && 
-				checkPieceType == pieceArray [3, 3, z].pieceType ) {
+			if (checkPieceType == pieceArrayCheck [1, 1, z].pieceType &&
+				checkPieceType == pieceArrayCheck [2, 2, z].pieceType && 
+				checkPieceType == pieceArrayCheck [3, 3, z].pieceType ) {
 
-				Debug.Log ("WIN");
-				MyAudio.winSoundFlug = true;
+				return 1;
 
 			}
 		}
@@ -421,19 +456,18 @@ public class GameController : MonoBehaviour {
 		// 右下から左上に斜め。Z(奥行をずらしていく)
 		for (int z = 0; z < 4; z++) {
 
-			checkPieceType = pieceArray [3, 0, z].pieceType;
+			checkPieceType = pieceArrayCheck [3, 0, z].pieceType;
 
 			if (checkPieceType == PieceType.None) {
 
 				continue;
 
 			}
-			if (checkPieceType == pieceArray [2, 1, z].pieceType &&
-				checkPieceType == pieceArray [1, 2, z].pieceType && 
-				checkPieceType == pieceArray [0, 3, z].pieceType ) {
+			if (checkPieceType == pieceArrayCheck [2, 1, z].pieceType &&
+				checkPieceType == pieceArrayCheck [1, 2, z].pieceType && 
+				checkPieceType == pieceArrayCheck [0, 3, z].pieceType ) {
 
-				Debug.Log ("WIN");
-				MyAudio.winSoundFlug = true;
+				return 1;
 
 			}
 		}
@@ -441,7 +475,7 @@ public class GameController : MonoBehaviour {
 		// 左下手前から左奥に斜め。X(横方向をずらしていく)
 		for (int x = 0; x < 4; x++) {
 
-			checkPieceType = pieceArray [x, 0, 0].pieceType;
+			checkPieceType = pieceArrayCheck [x, 0, 0].pieceType;
 
 			if (checkPieceType == PieceType.None) {
 
@@ -449,12 +483,11 @@ public class GameController : MonoBehaviour {
 
 			}
 
-			if (checkPieceType == pieceArray [x, 1, 1].pieceType &&
-				checkPieceType == pieceArray [x, 2, 2].pieceType && 
-				checkPieceType == pieceArray [x, 3, 3].pieceType ) {
+			if (checkPieceType == pieceArrayCheck [x, 1, 1].pieceType &&
+				checkPieceType == pieceArrayCheck [x, 2, 2].pieceType && 
+				checkPieceType == pieceArrayCheck [x, 3, 3].pieceType ) {
 
-				Debug.Log ("WIN");
-				MyAudio.winSoundFlug = true;
+				return 1;
 
 			}
 		}
@@ -462,7 +495,7 @@ public class GameController : MonoBehaviour {
 		// 左下奥から左手前に斜め。X(横方向をずらしていく)
 		for (int x = 0; x < 4; x++) {
 
-			checkPieceType = pieceArray [x, 0, 3].pieceType;
+			checkPieceType = pieceArrayCheck [x, 0, 3].pieceType;
 
 			if (checkPieceType == PieceType.None) {
 
@@ -470,12 +503,11 @@ public class GameController : MonoBehaviour {
 
 			}
 
-			if (checkPieceType == pieceArray [x, 1, 2].pieceType &&
-				checkPieceType == pieceArray [x, 2, 1].pieceType && 
-				checkPieceType == pieceArray [x, 3, 0].pieceType ) {
+			if (checkPieceType == pieceArrayCheck [x, 1, 2].pieceType &&
+				checkPieceType == pieceArrayCheck [x, 2, 1].pieceType && 
+				checkPieceType == pieceArrayCheck [x, 3, 0].pieceType ) {
 
-				Debug.Log ("WIN");
-				MyAudio.winSoundFlug = true;
+				return 1;
 
 			}
 		}
@@ -483,7 +515,7 @@ public class GameController : MonoBehaviour {
 		// 左下からクロス。Y(高さをずらしていく)
 		for (int y = 0; y < 4; y++) {
 
-			checkPieceType = pieceArray [0, y, 0].pieceType;
+			checkPieceType = pieceArrayCheck [0, y, 0].pieceType;
 
 			if (checkPieceType == PieceType.None) {
 
@@ -491,12 +523,11 @@ public class GameController : MonoBehaviour {
 
 			}
 
-			if (checkPieceType == pieceArray [1, y, 1].pieceType &&
-				checkPieceType == pieceArray [2, y, 2].pieceType && 
-				checkPieceType == pieceArray [3, y, 3].pieceType ) {
+			if (checkPieceType == pieceArrayCheck [1, y, 1].pieceType &&
+				checkPieceType == pieceArrayCheck [2, y, 2].pieceType && 
+				checkPieceType == pieceArrayCheck [3, y, 3].pieceType ) {
 
-				Debug.Log ("WIN");
-				MyAudio.winSoundFlug = true;
+				return 1;
 
 			}
 		}
@@ -504,7 +535,7 @@ public class GameController : MonoBehaviour {
 		// 右下からクロス。Y(高さをずらしていく)
 		for (int y = 0; y < 4; y++) {
 
-			checkPieceType = pieceArray [3, y, 0].pieceType;
+			checkPieceType = pieceArrayCheck [3, y, 0].pieceType;
 
 			if (checkPieceType == PieceType.None) {
 
@@ -512,42 +543,39 @@ public class GameController : MonoBehaviour {
 
 			}
 
-			if (checkPieceType == pieceArray [2, y, 1].pieceType &&
-				checkPieceType == pieceArray [1, y, 2].pieceType && 
-				checkPieceType == pieceArray [0, y, 3].pieceType ) {
+			if (checkPieceType == pieceArrayCheck [2, y, 1].pieceType &&
+				checkPieceType == pieceArrayCheck [1, y, 2].pieceType && 
+				checkPieceType == pieceArrayCheck [0, y, 3].pieceType ) {
 
-				Debug.Log ("WIN");
-				MyAudio.winSoundFlug = true;
+				return 1;
 
 			}
 		}
 
 		// 左手前下から右奥上に斜めクロス
-		checkPieceType = pieceArray [0, 0, 0].pieceType;
+		checkPieceType = pieceArrayCheck [0, 0, 0].pieceType;
 
 		if (checkPieceType != PieceType.None) {
 
-			if (checkPieceType == pieceArray [1, 1, 1].pieceType &&
-				checkPieceType == pieceArray [2, 2, 2].pieceType && 
-				checkPieceType == pieceArray [3, 3, 3].pieceType ) {
+			if (checkPieceType == pieceArrayCheck [1, 1, 1].pieceType &&
+				checkPieceType == pieceArrayCheck [2, 2, 2].pieceType && 
+				checkPieceType == pieceArrayCheck [3, 3, 3].pieceType ) {
 
-				Debug.Log ("WIN");
-				MyAudio.winSoundFlug = true;
+				return 1;
 
 			}
 		}
 
 		// 右手前下から左奥上に斜めクロス
-		checkPieceType = pieceArray [3, 0, 0].pieceType;
+		checkPieceType = pieceArrayCheck [3, 0, 0].pieceType;
 
 		if (checkPieceType != PieceType.None) {
 
-			if (checkPieceType == pieceArray [2, 1, 1].pieceType &&
-				checkPieceType == pieceArray [1, 2, 2].pieceType && 
-				checkPieceType == pieceArray [0, 3, 3].pieceType ) {
+			if (checkPieceType == pieceArrayCheck [2, 1, 1].pieceType &&
+				checkPieceType == pieceArrayCheck [1, 2, 2].pieceType && 
+				checkPieceType == pieceArrayCheck [0, 3, 3].pieceType ) {
 
-				Debug.Log ("WIN");
-				MyAudio.winSoundFlug = true;
+				return 1;
 
 			}
 		}
@@ -557,29 +585,73 @@ public class GameController : MonoBehaviour {
 
 		if (checkPieceType != PieceType.None) {
 
-			if (checkPieceType == pieceArray [1, 1, 2].pieceType &&
-				checkPieceType == pieceArray [2, 2, 1].pieceType && 
-				checkPieceType == pieceArray [3, 3, 0].pieceType ) {
+			if (checkPieceType == pieceArrayCheck [1, 1, 2].pieceType &&
+				checkPieceType == pieceArrayCheck [2, 2, 1].pieceType && 
+				checkPieceType == pieceArrayCheck [3, 3, 0].pieceType ) {
 
-				Debug.Log ("WIN");
-				MyAudio.winSoundFlug = true;
+				return 1;
 
 			}
 		}
 
 		// 右奥下から左手前上に斜めクロス
-		checkPieceType = pieceArray [3, 0, 3].pieceType;
+		checkPieceType = pieceArrayCheck [3, 0, 3].pieceType;
 
 		if (checkPieceType != PieceType.None) {
 
-			if (checkPieceType == pieceArray [2, 1, 2].pieceType &&
-				checkPieceType == pieceArray [1, 2, 1].pieceType && 
-				checkPieceType == pieceArray [0, 3, 0].pieceType ) {
+			if (checkPieceType == pieceArrayCheck [2, 1, 2].pieceType &&
+				checkPieceType == pieceArrayCheck [1, 2, 1].pieceType && 
+				checkPieceType == pieceArrayCheck [0, 3, 0].pieceType ) {
 
-				Debug.Log ("WIN");
-				MyAudio.winSoundFlug = true;
+				return 1;
 
 			}
 		}
+
+		return 0;
+
 	}
+
+	public void Win() {
+
+		// それ以上コマを置けなくする
+		FinishFlug = true;
+
+		// 勝利の演出
+		if (SceneChange.gameMode == GameMode.Offline2P) {
+
+			if (order == PieceType.Black) {
+
+				Debug.Log ("先攻(黒)の勝利！");
+
+			} else {
+
+				Debug.Log ("後攻(白)の勝利！");
+
+			}
+
+		} else if (SceneChange.gameMode == GameMode.CpuLevel1 ||
+		           SceneChange.gameMode == GameMode.CpuLevel2 ||
+		           SceneChange.gameMode == GameMode.CpuLevel3) {
+
+			if (order == CpuGameController.cpuPieceType) {
+
+				Debug.Log (order + "CPU WIN!!");
+
+			} else {
+
+				Debug.Log (order + "Player WIN!!");
+
+			}
+		}
+
+		// 勝利の音楽を流す
+		MyAudio.winSoundFlug = true;
+
+		// 戻るボタンを表示する
+		backButton.gameObject.SetActive (true);
+
+	}
+
+
 }

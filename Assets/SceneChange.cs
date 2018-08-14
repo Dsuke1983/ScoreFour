@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class SceneChange : MonoBehaviour {
 
@@ -27,22 +28,26 @@ public class SceneChange : MonoBehaviour {
 
 		case "2players_offline":
 			gameMode = GameMode.Offline2P;
-			Application.LoadLevel ("2pOfflineGameScene");
+			SceneManager.LoadScene ("2pOfflineGameScene");
 			break;
 
 		case "cpuLevel1":
 			gameMode = GameMode.CpuLevel1;
-			Application.LoadLevel ("CpuGameScene");
+			SceneManager.LoadScene ("CpuGameScene");
 			break;
 
 		case "cpuLevel2":
 			gameMode = GameMode.CpuLevel2;
-			Application.LoadLevel ("CpuGameScene");
+			SceneManager.LoadScene ("CpuGameScene");
 			break;
 
 		case "cpuLevel3":
 			gameMode = GameMode.CpuLevel2;
-			Application.LoadLevel ("CpuGameScene");
+			SceneManager.LoadScene ("CpuGameScene");
+			break;
+
+		case "back":
+			SceneManager.LoadScene ("Opening");
 			break;
 
 		default:
