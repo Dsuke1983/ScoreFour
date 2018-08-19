@@ -49,10 +49,12 @@ public class CpuGameController : MonoBehaviour {
 		if (cpuPieceType == PieceType.Black) {
 			senkouText.GetComponent<Text> ().text = "CPU";
 			koukouText.GetComponent<Text> ().text = "Player";
+			playerPieceType = PieceType.White;
 			CpuLogic ();
 		} else if (cpuPieceType == PieceType.White) {
 			senkouText.GetComponent<Text> ().text = "Player";
 			koukouText.GetComponent<Text> ().text = "CPU";
+			playerPieceType = PieceType.Black;
 		}
 	}
 	
@@ -93,17 +95,18 @@ public class CpuGameController : MonoBehaviour {
 		// リストから抽出して1つ目の位置を順番に処理していく(最大16箇所)
 		for (int i = 0; i < firstPutableList.Count; i++){
 
-			Piece firstPutablePiece = firstPutableList [0];
+			// PieceArrayをPieceArrayNowにコピーして、現在の状況と一致させる
+			Array.Copy (gameController.pieceArray, pieceArrayNow, gameController.pieceArray.Length);
 
-			// これはPieceArrayかPieceArrayNowかどっちの情報を更新している？
-			firstPutablePiece.SetPieceType (pieceTypeForCpuLogic);
+			Piece firstPutablePiece = firstPutableList [i];
+
+			// PieceArrayNowから1つ目に置くコマを選択
+			pieceArrayNow[firstPutablePiece.xIndex, firstPutablePiece.yIndex, firstPutablePiece.zIndex].SetPieceType (pieceTypeForCpuLogic);
 
 			// 4つ揃っているか判定して揃ってた場合、piecePointsに+1する
 			// 0 = NONE / 1 = 揃っている
 			if (gameController.GameCheck (pieceArrayNow) == 1) {
-				// ここどう書けばいいかわからん。
-				// piecePoints[x, y, z]++;
-				Debug.Log("piecePoints++");
+				piecePoints[firstPutablePiece.xIndex, firstPutablePiece.yIndex, firstPutablePiece.zIndex]++;
 				continue;
 			}
 
@@ -115,16 +118,25 @@ public class CpuGameController : MonoBehaviour {
 			}
 
 			// 2個目以降はランダム
+			// CpuSimulationはPlayerターンからスタートする
+			// CpuSimulation戻り値いるくね？
 			CpuSimulation ();
 
 		}
+
+		// 実際に置く
+		// ここよくわからん
+		// PieceController controll = pieceObjArray [putablePiece.xIndex, putablePiece.yIndex, putablePiece.zIndex].GetComponent<PieceController>();
+		// controll.gameObject.SetActive(true);
+		// controll.ShowPiece ();
+		// controll.ChangeMaterial (pieceTypeForCpuLogic);
 	}
 
 	void CpuSimulation() {
 
-		bool cpuSimulationRoopFlug = true;
+		bool cpuSimulationRoopFlug;
 
-		for (int i = 0; i < cpuThoughtNumber; i++){
+		for (int i = 0; i < cpuThoughtNumber; i++) {
 
 			cpuSimulationRoopFlug = true;
 
@@ -144,7 +156,7 @@ public class CpuGameController : MonoBehaviour {
 				Piece putablePiece = putableList [randomIndex];
 
 				// コマの情報を更新
-				putablePiece.SetPieceType (pieceTypeForCpuLogic);
+				pieceArrayNow [putablePiece.xIndex, putablePiece.yIndex, putablePiece.zIndex].SetPieceType (pieceTypeForCpuLogic);
 
 				// ここは視覚的にわかりやすいようにオブジェクトを表示させています
 				// 実際のシミュレーションでは削除すること
@@ -162,20 +174,47 @@ public class CpuGameController : MonoBehaviour {
 						pieceTypeForCpuLogic = PieceType.Black;
 					}
 				} else if (gameController.GameCheck (pieceArrayNow) == 1) {
-					// ここどう書けばいいかわからん。
-					// piecePoints[x, y, z]++;
+					// 勝ったのがcpuPieceTypeなら、piecePointsに1プラスする
+					if (pieceTypeForCpuLogic == cpuPieceType) {
+						piecePoints [putablePiece.xIndex, putablePiece.yIndex, putablePiece.zIndex]++;
+					}
 					cpuSimulationRoopFlug = false;
 					break;
 				} else if (gameController.GameCheck (pieceArrayNow) == 3) {
+					// 引き分けだった場合、なにもしない
 					cpuSimulationRoopFlug = false;
 					break;
 				}
 			}
 		}
 
-		// 
-	}
+		// 勝率が100%のところがあった場合、CPUレベルに関係なく置く
+		// if (piecePoints == cpuThoughtNumber){
 
+
+
+
+		// CPUのレベルに応じて置く場所を決定
+		switch (cpuLevel) {
+
+		case 1:
+			Debug.Log ("CpuLevel1");
+			break;
+
+		case 2:
+			Debug.Log ("CpuLevel2");		
+			break;
+
+		case 3:
+			Debug.Log ("CpuLevel3");		
+			break;
+
+		default:
+			Debug.Log ("エラー");		
+			break;
+
+		}
+	}
 	// コマを置ける場所のリストを返す
 	// 置ける場所のPieceクラスの情報がリストで入っている
 	List<Piece> getPutableList(Piece[, ,] pieceArrayNow) {
