@@ -4,6 +4,23 @@ using UnityEngine;
 using System;
 using UnityEngine.UI;
 
+public class PiecePoints {
+
+	public int pointXindex;
+	public int pointYindex;
+	public int pointZindex;
+	public int cpuPiecePoints;
+	public int cpuPiecePointsRanking;
+
+	public PiecePoints (int pointXindex, int pointYindex, int pointZindex, int cpuPiecePoints, int cpuPiecePointsRanking){
+		this.pointXindex = pointXindex;
+		this.pointYindex = pointYindex;
+		this.pointZindex = pointZindex;
+		this.cpuPiecePoints = cpuPiecePoints;
+		this.cpuPiecePointsRanking = cpuPiecePointsRanking;
+	}
+}
+
 public class CpuGameController : MonoBehaviour {
 
 	// orderを実際に変更するとゲームの手番が変わってしまうので、仮のorderの変数。
@@ -25,7 +42,8 @@ public class CpuGameController : MonoBehaviour {
 	private int cpuThoughtNumber = 100;
 
 	// 勝てばポイントが増える三次元配列
-	int[, ,] piecePoints = new int[GameController.pieceXCount, GameController.pieceYCount, GameController.pieceZCount];
+	public PiecePoints[, ,] piecePointsArray = new PiecePoints[GameController.pieceXCount, GameController.pieceYCount, GameController.pieceZCount];
+
 
 	// シミュレーション用
 	Piece[, ,] pieceArrayNow;
@@ -56,6 +74,19 @@ public class CpuGameController : MonoBehaviour {
 			koukouText.GetComponent<Text> ().text = "CPU";
 			playerPieceType = PieceType.Black;
 		}
+
+		// PiecePointsArrayの中身を初期化
+		for (int x = 0; x < 4; x++) {
+			for (int y = 0; y < 4; y++) {
+				for (int z = 0; z < 4; z++) {
+
+					// コマの情報を設定
+					piecePointsArray [x, y, z] = new PiecePoints (x, y, z, 0, 0);
+
+				}
+			}
+		}
+
 	}
 	
 	// Update is called once per frame
@@ -71,11 +102,11 @@ public class CpuGameController : MonoBehaviour {
 		Array.Copy (gameController.pieceArray, pieceArrayNow, gameController.pieceArray.Length);
 
 		//piecePointsを全て0にする
-		for (int x = 0; x < GameController.pieceXCount; x++) {
-			for (int y = 0; y < GameController.pieceYCount; y++) {
-				for (int z = 0; z < GameController.pieceZCount; z++) {
+		for (int x = 0; x < 4; x++) {
+			for (int y = 0; y < 4; y++) {
+				for (int z = 0; z < 4; z++) {
 
-					piecePoints [x, y, z] = 0;
+					piecePointsArray [x, y, z].cpuPiecePoints = 0;
 
 				}
 			}
@@ -106,7 +137,7 @@ public class CpuGameController : MonoBehaviour {
 			// 4つ揃っているか判定して揃ってた場合、piecePointsに+1する
 			// 0 = NONE / 1 = 揃っている
 			if (gameController.GameCheck (pieceArrayNow) == 1) {
-				piecePoints[firstPutablePiece.xIndex, firstPutablePiece.yIndex, firstPutablePiece.zIndex]++;
+				piecePointsArray [firstPutablePiece.xIndex, firstPutablePiece.yIndex, firstPutablePiece.zIndex].cpuPiecePoints++;
 				continue;
 			}
 
@@ -120,7 +151,59 @@ public class CpuGameController : MonoBehaviour {
 			// 2個目以降はランダム
 			// CpuSimulationはPlayerターンからスタートする
 			// CpuSimulation戻り値いるくね？
-			CpuSimulation ();
+			CpuSimulation (firstPutablePiece.xIndex, firstPutablePiece.yIndex, firstPutablePiece.zIndex);
+
+		}
+
+		// 勝率が100%のところがあった場合、CPUレベルに関係なく置いて関数を抜ける
+		for (int x = 0; x < 4; x++) {
+			for (int y = 0; y < 4; y++) {
+				for (int z = 0; z < 4; z++) {
+					if (piecePointsArray [x, y, z].cpuPiecePoints == cpuThoughtNumber) {
+
+						putPiece (cpuPieceType, x, y, z);
+
+						return;
+					}
+				}
+			}
+		}
+
+		// Listを作ってListに入れ、ソート
+		List<PiecePoints> piecePointsList = new List<PiecePoints> ();
+
+		for (int z = 0; z < 4; z++) {
+
+			for (int x = 0; x < 4; x++) {
+
+				for (int y = 0; y < 4; y++) {
+
+					piecePointsList.Add (piecePointsArray[x, y, z]);
+
+				}
+			}
+		}
+		piecePointsList.Sort((a, b) => b.cpuPiecePoints - a.cpuPiecePoints);
+
+
+		// CPUのレベルに応じて置く場所を決定
+		switch (cpuLevel) {
+
+		case 1:
+			putPiece (cpuPieceType, piecePointsList[2].pointXindex, piecePointsList[2].pointYindex, piecePointsList[2].pointZindex);
+			break;
+
+		case 2:
+			putPiece (cpuPieceType, piecePointsList[1].pointXindex, piecePointsList[1].pointYindex, piecePointsList[1].pointZindex);
+			break;
+
+		case 3:
+			putPiece (cpuPieceType, piecePointsList[0].pointXindex, piecePointsList[0].pointYindex, piecePointsList[0].pointZindex);
+			break;
+
+		default:
+			Debug.Log ("エラー");		
+			break;
 
 		}
 
@@ -132,7 +215,7 @@ public class CpuGameController : MonoBehaviour {
 		// controll.ChangeMaterial (pieceTypeForCpuLogic);
 	}
 
-	void CpuSimulation() {
+	void CpuSimulation(int pointsX, int pointsY, int pointsZ) {
 
 		bool cpuSimulationRoopFlug;
 
@@ -176,7 +259,7 @@ public class CpuGameController : MonoBehaviour {
 				} else if (gameController.GameCheck (pieceArrayNow) == 1) {
 					// 勝ったのがcpuPieceTypeなら、piecePointsに1プラスする
 					if (pieceTypeForCpuLogic == cpuPieceType) {
-						piecePoints [putablePiece.xIndex, putablePiece.yIndex, putablePiece.zIndex]++;
+						piecePointsArray[pointsX, pointsY, pointsZ].cpuPiecePoints++;
 					}
 					cpuSimulationRoopFlug = false;
 					break;
@@ -188,32 +271,6 @@ public class CpuGameController : MonoBehaviour {
 			}
 		}
 
-		// 勝率が100%のところがあった場合、CPUレベルに関係なく置く
-		// if (piecePoints == cpuThoughtNumber){
-
-
-
-
-		// CPUのレベルに応じて置く場所を決定
-		switch (cpuLevel) {
-
-		case 1:
-			Debug.Log ("CpuLevel1");
-			break;
-
-		case 2:
-			Debug.Log ("CpuLevel2");		
-			break;
-
-		case 3:
-			Debug.Log ("CpuLevel3");		
-			break;
-
-		default:
-			Debug.Log ("エラー");		
-			break;
-
-		}
 	}
 	// コマを置ける場所のリストを返す
 	// 置ける場所のPieceクラスの情報がリストで入っている
@@ -240,8 +297,19 @@ public class CpuGameController : MonoBehaviour {
 
 		return putableList;
 
-		// ゲーム難易度に応じて、どこに置くかを決める
-
 	}
 
+	// 実際にコマを置く
+	public void putPiece(PieceType pieceType, int x, int y, int z){
+
+		PieceController pieceController = gameController.pieceObjArray [x, y, z].GetComponent<PieceController> ();
+		Piece piece = gameController.pieceArray [x, y, z];
+
+		pieceController.gameObject.SetActive (true);
+		pieceController.ShowPiece ();
+		pieceController.ChangeMaterial (pieceType);
+		piece.SetPieceType (pieceType);
+		MyAudio.put2SoundFlug = true;
+
+	}
 }
