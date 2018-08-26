@@ -51,6 +51,16 @@ public class CpuGameController : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		
+
+	}
+	
+	// Update is called once per frame
+	void Update () {
+		
+	}
+
+	public void CpuGameStart(){
+
 		// GameComtrollerを参照する。
 		// GameControllerとCpuGameControllerは同じオブジェクトにアタッチしなければならない。
 		gameController = GetComponent <GameController> ();
@@ -80,6 +90,7 @@ public class CpuGameController : MonoBehaviour {
 			senkouText.GetComponent<Text> ().text = "CPU";
 			koukouText.GetComponent<Text> ().text = "Player";
 			playerPieceType = PieceType.White;
+			CpuLogic ();
 		} else if (cpuPieceType == PieceType.White) {
 			senkouText.GetComponent<Text> ().text = "Player";
 			koukouText.GetComponent<Text> ().text = "CPU";
@@ -87,17 +98,6 @@ public class CpuGameController : MonoBehaviour {
 		}
 
 
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
-
-	public void CpuStartButton(){
-		if (cpuPieceType == PieceType.Black){
-			CpuLogic ();
-		}
 	}
 
 	public void CpuLogic(){

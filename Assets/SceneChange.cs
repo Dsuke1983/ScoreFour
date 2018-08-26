@@ -19,10 +19,6 @@ public class SceneChange : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 
-		cpuGameContloller = GetComponent <CpuGameController> ();
-
-		startButton = GameObject.Find("start");
-	
 	}
 	
 	// Update is called once per frame
@@ -59,11 +55,6 @@ public class SceneChange : MonoBehaviour {
 			gameMode = GameMode.CpuLevel3;
 			CpuGameController.cpuLevel = 3;
 			SceneManager.LoadScene ("CpuGameScene");
-			break;
-
-		case "start":
-			cpuGameContloller.CpuStartButton ();
-			startButton.gameObject.SetActive (false);
 			break;
 
 		case "back":

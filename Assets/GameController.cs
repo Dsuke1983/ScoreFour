@@ -158,6 +158,8 @@ public class GameController : MonoBehaviour {
 			}
 		}
 
+		cpuGameControlloer.CpuGameStart ();
+
 	}
 	
 	void Update () {
