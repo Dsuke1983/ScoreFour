@@ -36,7 +36,7 @@ public class CpuGameController : MonoBehaviour {
 	public static PieceType cpuPieceType;
 
 	// CPUのレベル1〜3
-	private int cpuLevel;
+	public static int cpuLevel;
 
 	// CPUの思考回数
 	private int cpuThoughtNumber = 100;
@@ -50,10 +50,22 @@ public class CpuGameController : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-
+		
 		// GameComtrollerを参照する。
 		// GameControllerとCpuGameControllerは同じオブジェクトにアタッチしなければならない。
 		gameController = GetComponent <GameController> ();
+
+		// PiecePointsArrayの中身を初期化
+		for (int x = 0; x < 4; x++) {
+			for (int y = 0; y < 4; y++) {
+				for (int z = 0; z < 4; z++) {
+
+					// コマの情報を設定
+					piecePointsArray [x, y, z] = new PiecePoints (x, y, z, 0, 0);
+
+				}
+			}
+		}
 
 		// 先攻後攻のテキスト
 		GameObject senkouText = GameObject.Find ("Senkou");
@@ -68,30 +80,24 @@ public class CpuGameController : MonoBehaviour {
 			senkouText.GetComponent<Text> ().text = "CPU";
 			koukouText.GetComponent<Text> ().text = "Player";
 			playerPieceType = PieceType.White;
-			CpuLogic ();
 		} else if (cpuPieceType == PieceType.White) {
 			senkouText.GetComponent<Text> ().text = "Player";
 			koukouText.GetComponent<Text> ().text = "CPU";
 			playerPieceType = PieceType.Black;
 		}
 
-		// PiecePointsArrayの中身を初期化
-		for (int x = 0; x < 4; x++) {
-			for (int y = 0; y < 4; y++) {
-				for (int z = 0; z < 4; z++) {
-
-					// コマの情報を設定
-					piecePointsArray [x, y, z] = new PiecePoints (x, y, z, 0, 0);
-
-				}
-			}
-		}
 
 	}
 	
 	// Update is called once per frame
 	void Update () {
 		
+	}
+
+	public void CpuStartButton(){
+		if (cpuPieceType == PieceType.Black){
+			CpuLogic ();
+		}
 	}
 
 	public void CpuLogic(){
@@ -202,7 +208,7 @@ public class CpuGameController : MonoBehaviour {
 			break;
 
 		default:
-			Debug.Log ("エラー");		
+			Debug.Log ("エラー:" + cpuLevel );		
 			break;
 
 		}
