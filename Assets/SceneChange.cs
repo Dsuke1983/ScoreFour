@@ -62,7 +62,7 @@ public class SceneChange : MonoBehaviour {
 			break;
 
 		case "start":
-			//cpuGameContloller.CpuStartButton ();
+			cpuGameContloller.CpuStartButton ();
 			startButton.gameObject.SetActive (false);
 			break;
 
