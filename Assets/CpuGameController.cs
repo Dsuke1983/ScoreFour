@@ -6,10 +6,15 @@ using UnityEngine.UI;
 
 public class PiecePoints {
 
+	// PiecePointsを入れる座標
 	public int pointXindex;
 	public int pointYindex;
 	public int pointZindex;
+
+	// PiecePoint
 	public int cpuPiecePoints;
+
+	// PiecePointの順位
 	public int cpuPiecePointsRanking;
 
 	public PiecePoints (int pointXindex, int pointYindex, int pointZindex, int cpuPiecePoints, int cpuPiecePointsRanking){
@@ -122,7 +127,23 @@ public class CpuGameController : MonoBehaviour {
 		pieceTypeForCpuLogic = gameController.order;
 
 		// 次の一手を置ける場所を取得(実際に置く場所の候補)
+		// ※ここ間違えてる
 		List<Piece> firstPutableList = getPutableList (pieceArrayNow);
+
+//		for (int z = 0; z < 4; z++) {
+//			for (int x = 0; x < 4; x++) {
+//				for (int y = 0; y < 4; y++) {
+//					Debug.Log (x +"/"+ y +"/"+ z +"="+ pieceArrayNow [x, y, z].pieceType);
+//				}
+//			}
+//		}
+
+
+			
+//		デバッグ
+//		for (int test = 0; test < firstPutableList.Count; test++) {
+//			Debug.Log (firstPutableList [test].xIndex +"/"+ firstPutableList [test].yIndex +"/"+ firstPutableList [test].zIndex);
+//		}
 
 		// もし置けるところがなかった場合、終了(ゲームが終了しているはずなので基本的にはないはず)
 		if (firstPutableList.Count == 0) {

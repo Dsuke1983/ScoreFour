@@ -158,7 +158,12 @@ public class GameController : MonoBehaviour {
 			}
 		}
 
-		cpuGameControlloer.CpuGameStart ();
+		if (SceneChange.gameMode == GameMode.CpuLevel1 ||
+		    SceneChange.gameMode == GameMode.CpuLevel2 ||
+		    SceneChange.gameMode == GameMode.CpuLevel3) {
+
+			cpuGameControlloer.CpuGameStart ();
+		}
 
 	}
 	
